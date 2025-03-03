@@ -1,0 +1,61 @@
+services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: local_nginx
+    depends_on:
+      - frontend
+      - backend
+      - ollama
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  ollama:
+    build: ./ollama
+    container_name: ollama_server
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11435
+      - GIN_MODE=release
+      - OLLAMA_KEEP_ALIVE=-1
+    ports:
+      - "11435:11435"
+    volumes:
+      - ollama_models:/root/.ollama/models
+    entrypoint: ["/usr/bin/bash", "/pull-llama3.sh"]      
+
+  db:
+    image: postgres:15
+    container_name: langgraph_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    expose:
+      - "5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./fastapi-backend
+    container_name: langgraph_backend
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+      - OLLAMA_URL=http://ollama:11435
+    expose:
+      - "8000"
+    depends_on:
+      - db
+      - ollama
+
+  frontend:
+    build: ./angular-frontend
+    container_name: langgraph_frontend
+    expose:
+      - "80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+  ollama_models:

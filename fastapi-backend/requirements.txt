@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+langgraph
+langchain-core
+langchain-ollama
+pydantic
+SQLAlchemy
+psycopg[binary]
+langgraph-checkpoint-postgres
+dotenv
+Pillow
